@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% if username %}{{ username }}'s public Gists{% else %}Public Gist explorer{% endif %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <main>
+    <header class="brand"><span class="brand-mark" aria-hidden="true">{ }</span> GIST EXPLORER</header>
+    <section class="intro">
+      <p class="eyebrow">Small snippets. Easy to explore.</p>
+      <h1>A clearer view of public Gists.</h1>
+      <p class="muted">Find a GitHub user's shared code snippets and files, all in one place.</p>
+    </section>
+
+    <form class="search" action="{{ url_for('browse_gists') }}" method="get">
+      <label for="username">GitHub username</label>
+      <div class="search-row">
+        <input id="username" name="username" value="{{ username }}" placeholder="e.g. octocat"
+               required maxlength="39" pattern="[A-Za-z0-9]+(-[A-Za-z0-9]+)*" autocomplete="off"
+               autocapitalize="none" spellcheck="false" aria-describedby="search-help">
+        <button type="submit">View Gists</button>
+      </div>
+      <p class="help" id="search-help">Public Gists only. No GitHub sign-in needed. <a href="{{ url_for('browse_gists', username='octocat') }}">Try octocat</a></p>
+    </form>
+
+    {% if error_message %}
+    <section class="message error" role="alert">
+      <h2>We couldn't load these Gists.</h2>
+      <p>{{ error_message }}</p>
+      <p>Check the username or try again later.</p>
+    </section>
+    {% elif gists is not none %}
+    <section aria-label="Gist results">
+      <div class="results-heading">
+        <div>
+          <h2>{{ username }}'s public Gists</h2>
+          <p class="count">{{ gists|length }} public Gist{% if gists|length != 1 %}s{% endif %}</p>
+        </div>
+        <a class="json-link" href="{{ url_for('get_gists', username=username) }}">View JSON</a>
+      </div>
+      {% if gists %}
+      <div class="table-wrap">
+        <table aria-label="Public Gists for {{ username }}">
+          <thead><tr><th scope="col">Description</th><th scope="col">Files &amp; language</th><th scope="col">Updated (UTC)</th><th scope="col">Link</th></tr></thead>
+          <tbody>
+            {% for gist in gists %}
+            <tr>
+              <td data-label="Description">
+                <p class="gist-title">{{ gist.description }}</p>
+                <p class="gist-id">Gist {{ gist.id }}</p>
+              </td>
+              <td data-label="Files &amp; language">
+                <ul class="files">
+                  {% for file in gist.files %}
+                  <li><span class="filename">{{ file.name }}</span><span class="language">{{ file.language }}</span></li>
+                  {% else %}
+                  <li class="muted">No files listed</li>
+                  {% endfor %}
+                </ul>
+              </td>
+              <td data-label="Updated (UTC)">
+                {% if gist.updated_date != 'Not available' %}<time datetime="{{ gist.updated_date }}">{{ gist.updated_date }}</time>{% else %}<span class="muted">Not available</span>{% endif %}
+              </td>
+              <td data-label="Link">
+                {% if gist.url %}
+                <a class="open-link" href="{{ gist.url }}" target="_blank" rel="noopener noreferrer" aria-label="Open Gist {{ gist.id }} on GitHub (new tab)">Open Gist &nearr;</a>
+                {% else %}<span class="muted">Not available</span>{% endif %}
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="message"><h2>No public Gists found.</h2><p>This user has no public Gists to display. Try another GitHub username.</p></div>
+      {% endif %}
+    </section>
+    {% else %}
+    <section class="message welcome">
+      <h2>Start with a username.</h2>
+      <p>A Gist is a small collection of files shared on GitHub. Enter a username above to explore their public Gists.</p>
+    </section>
+    {% endif %}
+    <footer>Results are fetched from GitHub when you search. Only public Gists are shown.</footer>
+  </main>
+</body>
+</html>
